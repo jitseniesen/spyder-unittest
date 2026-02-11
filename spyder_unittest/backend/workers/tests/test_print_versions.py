@@ -5,6 +5,9 @@
 # (see LICENSE.txt for details)
 """Tests for print_versions.py"""
 
+from importlib.metadata import Distribution
+from unittest.mock import MagicMock
+
 from spyder_unittest.backend.workers.print_versions import (
     get_nose2_info, get_pytest_info, get_unittest_info)
 
@@ -22,12 +25,13 @@ def test_get_pytest_info_without_plugins(monkeypatch):
 
 def test_get_pytest_info_with_plugins(monkeypatch):
     import pytest
-    import pkg_resources
     monkeypatch.setattr(pytest, '__version__', '1.2.3')
-    dist1 = pkg_resources.Distribution(project_name='myPlugin1',
-                                       version='4.5.6')
-    dist2 = pkg_resources.Distribution(project_name='myPlugin2',
-                                       version='7.8.9')
+    dist1 = MagicMock(
+        autospec=Distribution, project_name='myPlugin1', version='4.5.6'
+    )
+    dist2 = MagicMock(
+        autospec=Distribution, project_name='myPlugin2', version='7.8.9'
+    )
     from _pytest.config import PytestPluginManager
     monkeypatch.setattr(
         PytestPluginManager,
