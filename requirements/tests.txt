@@ -1,4 +1,4 @@
 flaky
 nose2
-pytest>=5
+pytest>=7
 pytest-qt

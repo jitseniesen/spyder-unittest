@@ -40,7 +40,7 @@ class SpyderPlugin():
         self.was_skipped = False
         self.was_xfail = False
 
-    def pytest_report_header(self, config, startdir):
+    def pytest_report_header(self, config, start_path):
         """Called by pytest before any reporting."""
         self.writer.write({
             'event': 'config',

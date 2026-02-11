@@ -15,7 +15,6 @@ from unittest.mock import create_autospec, MagicMock, Mock
 import pytest
 
 # Local imports
-# Local imports
 # Modules in spyder_unittest.backend.workers assume that their directory
 # is in `sys.path`, so add that directory to the path.
 old_path = sys.path
