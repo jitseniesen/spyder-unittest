@@ -75,6 +75,9 @@ class UnitTestWidget(PluginMainWidget):
         Python interpreter for which `self.dependencies` is valid.
     framework_registry : FrameworkRegistry
         Registry of supported testing frameworks.
+    got_unexpected_testresult : bool
+        Whether we received the result of a test that was not collected in the
+        current test run.
     pre_test_hook : function returning bool or None
         If set, contains function to run before running tests; abort the test
         run if hook returns False.
@@ -112,6 +115,7 @@ class UnitTestWidget(PluginMainWidget):
         self.pre_test_hook = None
         self.pythonpath = None
         self.testrunner = None
+        self.got_unexpected_testresult = False
 
         self.testdataview = TestDataView(self)
         self.testdatamodel = TestDataModel(self)
@@ -365,6 +369,7 @@ class UnitTestWidget(PluginMainWidget):
             if self.pre_test_hook() is False:
                 return
 
+        self.got_unexpected_testresult = False
         if config is None:
             config = self.config
         pythonpath = self.pythonpath
@@ -473,7 +478,7 @@ class UnitTestWidget(PluginMainWidget):
         testresults = [TestResult(Category.PENDING, _('pending'), name,
                                   message=_('running'))
                        for name in testnames]
-        self.testdatamodel.update_testresults(testresults)
+        self.update_testresults_safe(testresults)
 
     def tests_collect_error(self, testnames_plus_msg):
         """Called when errors are encountered during collection."""
@@ -485,7 +490,31 @@ class UnitTestWidget(PluginMainWidget):
 
     def tests_yield_result(self, testresults):
         """Called when test results are received."""
-        self.testdatamodel.update_testresults(testresults)
+        self.update_testresults_safe(testresults)
+
+    def update_testresults_safe(self, testresults: list[TestResult]):
+        """
+        Update test results in data model and handle errors.
+
+        If a KeyError is raised (because one or more of the test results are
+        from test that were not collected earlier) and this is the first time
+        in the current test run, then display an dialog box explaining the
+        situation.
+        """
+        try:
+            self.testdatamodel.update_testresults(testresults)
+        except KeyError:
+            if self.got_unexpected_testresult:
+                return
+            self.got_unexpected_testresult = True
+            msg = _(
+                "Spyder can not display the test results because it received "
+                "an unexpected test result."
+                "<p>"
+                "This may be caused by unsupported pytest plugins, "
+                "e.g., pytest-xdist."
+            )
+            QMessageBox.critical(self, _("Error"), msg)
 
     def tests_stopped(self):
         """Called when tests are stopped"""

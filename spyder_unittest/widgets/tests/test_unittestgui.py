@@ -106,6 +106,23 @@ def test_unittestwidget_tests_yield_results(widget):
     widget.tests_yield_result(results)
     widget.testdatamodel.update_testresults.assert_called_once_with(results)
 
+def test_unittestwidget_tests_yield_results_with_error(widget):
+    """
+    Test that if test_yield_result() raises a KeyError, a message is displayed,
+    but that no message is displayed on the second time.
+
+    Regression test for spyder-ide/spyder-unittest#233.
+    """
+    use_mock_model(widget)
+    widget.testdatamodel.update_testresults = Mock(side_effect=KeyError)
+    results = [TestResult(Category.OK, 'ok', 'hammodule.spam')]
+    with patch('spyder_unittest.widgets.unittestgui.QMessageBox') as mockQMessageBox:
+        widget.tests_yield_result(results)
+    mockQMessageBox.critical.assert_called()
+    with patch('spyder_unittest.widgets.unittestgui.QMessageBox') as mockQMessageBox:
+        widget.tests_yield_result(results)
+    mockQMessageBox.critical.assert_not_called()
+
 def test_unittestwidget_set_message(widget):
     widget.status_label = Mock()
     widget.set_status_label('xxx')
